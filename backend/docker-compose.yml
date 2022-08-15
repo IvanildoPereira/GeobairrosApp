@@ -1,0 +1,41 @@
+version: "3"
+
+services:
+  app:
+    depends_on:
+      - bd_geobairros
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/usr/app
+    networks:
+      - geobairros_network
+
+  # Database
+  bd_geobairros:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345678
+      MYSQL_DATABASE: geobairros_db
+      MYSQL_USER: geobairros
+      MYSQL_PASSWORD: geobairros
+    networks:
+      - geobairros_network
+
+  # Run Migrations
+  migration:
+    image: buscaki-api-dev_app:latest
+    command: >
+      bash -c "./wait-for-it/wait-for-it.sh bd_geobairros:3306 -- npx sequelize-cli db:migrate &&
+             npx sequelize-cli db:seed:all"
+    depends_on:
+      - bd_geobairros
+    networks:
+      - geobairros_network
+
+networks:
+  geobairros_network:
